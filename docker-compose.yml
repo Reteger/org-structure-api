@@ -15,13 +15,30 @@
     volumes:
       - pg-data:/var/lib/postgresql/data
 
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile.migrate
+    command:
+      - "-dir"
+      - "/migrations"
+      - "postgres"
+      - "postgres://postgres:secret@postgres:5432/orgdb?sslmode=disable"
+      - "up"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./migrations:/migrations
+    restart: "no"
+
   api:
     build:
       context: .
       dockerfile: Dockerfile
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     ports:
       - "8080:8080"
     environment:
